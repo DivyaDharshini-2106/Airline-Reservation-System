@@ -1,0 +1,172 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+
+public class EnhancedAirlineReservationSystem {
+
+    // Flight class to represent each flight's details
+    static class Flight {
+        String flightNumber;
+        String source;
+        String destination;
+        int availableSeats;
+        double price;
+
+        public Flight(String flightNumber, String source, String destination, int availableSeats, double price) {
+            this.flightNumber = flightNumber;
+            this.source = source;
+            this.destination = destination;
+            this.availableSeats = availableSeats;
+            this.price = price;
+        }
+
+        // Method to book seats and reduce availability
+        public boolean bookSeats(int numSeats) {
+            if (availableSeats >= numSeats) {
+                availableSeats -= numSeats;
+                return true;
+            }
+            return false;
+        }
+
+        // Method to restore seats if a booking is canceled or modified
+        public void cancelSeats(int numSeats) {
+            availableSeats += numSeats;
+        }
+
+        // Method to display the flight's details
+        @Override
+        public String toString() {
+            return flightNumber + " | " + source + " -> " + destination + " | Available Seats: " + availableSeats + " | Price: $" + price;
+        }
+    }
+
+    // Main GUI class
+    static class ReservationApp {
+        private Frame frame;
+        private Choice flightChoice;
+        private TextField nameField;
+        private TextField numTicketsField;
+        private TextArea bookingDetailsArea;
+        private Button bookButton;
+        private Button viewBookingsButton;
+
+        private ArrayList<Flight> flights;
+        private HashMap<String, String> userBookings; // To track bookings by user name
+
+        public ReservationApp() {
+            // Initialize flight data
+            flights = new ArrayList<>();
+            flights.add(new Flight("AI123", "New York", "Los Angeles", 20, 150.0));
+            flights.add(new Flight("AI456", "Chicago", "Miami", 25, 120.0));
+            flights.add(new Flight("AI789", "San Francisco", "Seattle", 30, 100.0));
+
+            userBookings = new HashMap<>();
+
+            // Setup GUI
+            setupGUI();
+        }
+
+        private void setupGUI() {
+            frame = new Frame("Airline Reservation System");
+            frame.setSize(500, 400);
+            frame.setLayout(new FlowLayout());
+
+            // Flight Selection
+            Label flightLabel = new Label("Select a Flight:");
+            flightChoice = new Choice();
+            for (Flight flight : flights) {
+                flightChoice.add(flight.toString());
+            }
+
+            // Name Entry
+            Label nameLabel = new Label("Enter Your Name:");
+            nameField = new TextField(20);
+
+            // Ticket Count
+            Label numTicketsLabel = new Label("Number of Tickets:");
+            numTicketsField = new TextField(5);
+
+            // Text Area to show booking details
+            bookingDetailsArea = new TextArea(10, 40);
+            bookingDetailsArea.setEditable(false);
+
+            // Buttons
+            bookButton = new Button("Book Tickets");
+            viewBookingsButton = new Button("View Bookings");
+
+            // Adding components to the frame
+            frame.add(flightLabel);
+            frame.add(flightChoice);
+            frame.add(nameLabel);
+            frame.add(nameField);
+            frame.add(numTicketsLabel);
+            frame.add(numTicketsField);
+            frame.add(bookButton);
+            frame.add(viewBookingsButton);
+            frame.add(bookingDetailsArea);
+
+            // Action listener for booking
+            bookButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String name = nameField.getText();
+                    String numTicketsText = numTicketsField.getText();
+                    if (name.isEmpty() || numTicketsText.isEmpty()) {
+                        bookingDetailsArea.append("Please fill in all fields.\n");
+                        return;
+                    }
+
+                    int numTickets = Integer.parseInt(numTicketsText);
+                    Flight selectedFlight = flights.get(flightChoice.getSelectedIndex());
+
+                    // Check if the user already has a booking
+                    if (userBookings.containsKey(name)) {
+                        bookingDetailsArea.append(name + " has already booked a ticket. Modify or cancel the previous booking.\n");
+                    } else {
+                        // Proceed with booking if there are enough seats
+                        if (selectedFlight.bookSeats(numTickets)) {
+                            userBookings.put(name, selectedFlight.flightNumber + " booked " + numTickets + " tickets");
+                            bookingDetailsArea.append("Booking Successful! \n");
+                            updateFlightChoice(); // Update the available flights after booking
+                        } else {
+                            bookingDetailsArea.append("Not enough seats available.\n");
+                        }
+                    }
+                }
+            });
+
+            // Action listener for viewing bookings
+            viewBookingsButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    bookingDetailsArea.setText("Booking Details:\n");
+                    for (Map.Entry<String, String> entry : userBookings.entrySet()) {
+                        bookingDetailsArea.append(entry.getKey() + " -> " + entry.getValue() + "\n");
+                    }
+                }
+            });
+
+            // Window close event
+            frame.addWindowListener(new WindowAdapter() {
+                public void windowClosing(WindowEvent we) {
+                    System.exit(0);
+                }
+            });
+
+            frame.setVisible(true);
+        }
+
+        // Method to update the flight options after a booking
+        private void updateFlightChoice() {
+            flightChoice.removeAll();
+            for (Flight flight : flights) {
+                flightChoice.add(flight.toString());
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new ReservationApp();
+    }
+}
